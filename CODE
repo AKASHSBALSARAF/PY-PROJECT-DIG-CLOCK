@@ -1,17 +1,53 @@
 import tkinter as tk
-from time import strftime
+from tkinter import ttk
+from time import strftime, localtime
+import requests
+from ttkthemes import ThemedStyle
 
-def time():
-    string = strftime('%H:%M:%S %p')
-    label.config(text=string)
-    label.after(1000, time)
+def get_weather(api_key, city):
+    url = f"https://api.openweathermap.org/data/2.5/weather?q=Talegaon,india&APPID=9f97e1bccd80a7180a01da75636193ce&units=metric"
+    response = requests.get(url)
+    weather_data = response.json()
+    return weather_data
+
+def update_clock_and_weather():
+    # Get current time and update the clock
+    time_string = strftime('%H:%M:%S %p')
+    label.config(text=time_string)
+
+    weather_data = get_weather(api_key="9f97e1bccd80a7180a01da75636193ce", city="TALEGAON")
+    if weather_data["cod"] == 200:
+        weather_description = weather_data["weather"][0]["description"]
+        temperature = weather_data["main"]["temp"]
+        pressure = weather_data["main"]["pressure"]
+        humidity = weather_data["main"]["humidity"]
+        sunrise = localtime(weather_data["sys"]["sunrise"])
+        sunset = localtime(weather_data["sys"]["sunset"])
+
+        weather_label.config(text=f"Weather: {weather_description.capitalize()}\nTemperature: {temperature:.1f}°C\n"
+                                  f"Pressure: {pressure} hPa\nHumidity: {humidity}%\n"
+                                  f"Sunrise: {strftime('%H:%M:%S', sunrise)}\n"
+                                  f"Sunset: {strftime('%H:%M:%S', sunset)}")
+    else:
+        weather_label.config(text="Weather information not available.")
+
+    # Schedule the next update after 10 minutes (600000 milliseconds)
+    root.after(600000, update_clock_and_weather)
 
 root = tk.Tk()
-root.title("Digital Clock")
-root.geometry("260x120")
+root.title("Digital Clock and Weather")
+root.geometry("400x250")
+root.configure(bg="white")
 
-label = tk.Label(root, font=('calibri', 40, 'bold'), background='black', foreground='white')
-label.pack(anchor='center')
+style = ThemedStyle(root)
+style.set_theme("breeze")  # You can try other themes like 'equilux', 'arc', 'scidblue', etc.
 
-time()
+label = ttk.Label(root, font=('calibri', 40, 'bold'))
+label.grid(row=0, column=0, padx=10, pady=20)
+
+weather_label = ttk.Label(root, font=('calibri', 14), justify="left")
+weather_label.grid(row=1, column=0, padx=10)
+
+update_clock_and_weather()
+
 root.mainloop()
